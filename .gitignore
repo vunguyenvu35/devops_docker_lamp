@@ -1,0 +1,4 @@
+# ignore app folder but keep empty folder
+/centos7/app
+!/centos7/app/opcache/*
+!/centos7/app/.gitkeep
