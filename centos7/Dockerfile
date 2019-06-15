@@ -4,9 +4,8 @@ LABEL maintainer="Vu Nguyen Vu <vunguyenvu35@gmail.com>"
 ENV HTTPD_PREFIX /usr/local/apache2
 
 RUN yum -y update 
-RUN yum install -y bzip2-libs ca-certificates glibc gmp gnutls libstdc++ openldap openssl-libs p11-kit pcre readline wget
-RUN yum install -y expat-devel pcre pcre-devel openssl-devel -y
-RUN yum install -y epel-release git bash
+RUN yum install -y bzip2-libs ca-certificates glibc gmp gnutls libstdc++ openldap openssl-libs p11-kit pcre readline wget expat-devel pcre pcre-devel openssl-devel epel-release git bash python-setuptools
+RUN easy_install supervisor
 
 # In stall httpd
 ADD install-httpd.sh /
@@ -14,6 +13,8 @@ RUN chmod +x /install-httpd.sh
 RUN sed -i 's/\r//' /install-httpd.sh
 RUN bash -c "/install-httpd.sh"
 ADD conf/httpd/ /usr/local/apache2/conf
+RUN ln -sf /dev/stdout /usr/local/apache2/logs/access_log
+RUN ln -sf /dev/stdout /usr/local/apache2/logs/error_log
 
 # install php-fpm 7.2
 RUN rpm -Uvh http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
@@ -58,8 +59,6 @@ RUN chmod -R 755  /run/php-fpm root root
 # Working dir
 WORKDIR $HTTPD_PREFIX
 # Run
-ADD run-httpd.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/run-httpd.sh
-RUN sed -i 's/\r//' /usr/local/bin/run-httpd.sh
-ENTRYPOINT ["sh", "/usr/local/bin/run-httpd.sh"]
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+CMD ["/usr/bin/supervisord"]
 EXPOSE 80

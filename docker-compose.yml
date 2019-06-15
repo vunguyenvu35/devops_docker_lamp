@@ -5,6 +5,6 @@ services:
     build: ./centos7
     container_name: web
     volumes:
-      - ./app:/usr/local/apache2/htdocs/app
+      - ./centos7/app:/usr/local/apache2/htdocs/app
     ports:
       - '80:80'
