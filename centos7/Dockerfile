@@ -56,6 +56,9 @@ RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/lo
 RUN mkdir /run/php-fpm
 RUN chmod -R 755  /run/php-fpm root root
 
+# ADD Source
+ADD app/ /usr/local/apache2/htdocs/app
+
 # Working dir
 WORKDIR $HTTPD_PREFIX
 # Run
