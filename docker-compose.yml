@@ -1,10 +1,10 @@
 version: "3.3"
 services:
-
-  web: 
-    build: ./centos7
-    container_name: web
+  front-end: 
+    image: ziliadmin
     volumes:
-      - ./centos7/app:/usr/local/apache2/htdocs/app
+      - /opt/zili-admin:/usr/local/apache2/htdocs/app
     ports:
       - '80:80'
+    environment:
+      - MY_SERVER_NAME=zili.admin.com

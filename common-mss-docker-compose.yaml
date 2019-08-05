@@ -1,0 +1,10 @@
+version: "3.3"
+services:
+  front-end: 
+    image: web
+    volumes:
+      - /opt/sources/mss/BSS_Common_Services:/usr/local/apache2/htdocs/app
+    ports:
+      - '80:80'
+    extra_hosts:
+      - "search-service.com:192.168.88.221"

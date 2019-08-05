@@ -12,6 +12,12 @@ ADD install-httpd.sh /
 RUN chmod +x /install-httpd.sh
 RUN sed -i 's/\r//' /install-httpd.sh
 RUN bash -c "/install-httpd.sh"
+
+# ADD install-pagespeed-mode.sh /
+# RUN chmod +x /install-pagespeed-mode.sh
+# RUN sed -i 's/\r//' /install-pagespeed-mode.sh
+# RUN bash -c "/install-pagespeed-mode.sh"
+
 ADD conf/httpd/ /usr/local/apache2/conf
 RUN ln -sf /dev/stdout /usr/local/apache2/logs/access_log
 RUN ln -sf /dev/stdout /usr/local/apache2/logs/error_log
@@ -56,11 +62,11 @@ RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/lo
 RUN mkdir /run/php-fpm
 RUN chmod -R 755  /run/php-fpm root root
 
-# ADD Source
-ADD app/ /usr/local/apache2/htdocs/app
 
 # Working dir
-WORKDIR $HTTPD_PREFIX
+RUN mkdir $HTTPD_PREFIX/htdocs/app
+WORKDIR $HTTPD_PREFIX/htdocs/app
+
 # Run
 COPY supervisord.conf /etc/supervisor/supervisord.conf
 CMD ["/usr/bin/supervisord"]
