@@ -51,6 +51,21 @@ RUN easy_install supervisor
 ENV HTTPD_PREFIX /usr/local/apache2
 
 ###################################
+#   INSTALL APAHCE 2.4
+###################################
+
+# In stall httpd
+ADD install-httpd.sh /
+RUN chmod +x /install-httpd.sh
+RUN sed -i 's/\r//' /install-httpd.sh
+RUN bash -c "/install-httpd.sh"
+
+# ADD install-pagespeed-mode.sh /
+# RUN chmod +x /install-pagespeed-mode.sh
+# RUN sed -i 's/\r//' /install-pagespeed-mode.sh
+# RUN bash -c "/install-pagespeed-mode.sh"
+
+###################################
 #   INSTALL php-fpm 7.2
 ###################################
 
@@ -98,57 +113,21 @@ RUN chmod -R 755  /run/php-fpm root root
 #   INSTALL V8JS
 ###################################
 
-# Install Git latest
-RUN cd /usr/src && \
-    git clone https://github.com/git/git
-RUN cd /usr/src/git && make prefix=/usr/local/git all && make prefix=/usr/local/git install
-RUN yum -y remove git
-
-# Use new Git
-env PATH /usr/local/git/bin:$PATH
-
-# Install Depot Tools
-RUN cd /usr/src && git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-env PATH /usr/src/depot_tools:$PATH
-
-# Install v8 #######
-
-###################################
-# DO IT ON LOCAL PC. DO NOT RUNING ON DOCKER (TOO SLOW TO INSTALL)
-###################################
-
-RUN cd /usr/src \
-    fetch v8 \
-    gclient sync \
-    sed -i "s/crsT/crs/g" /usr/src/v8/tools/gyp/pylib/gyp/generator/make.py \
-    ./tools/dev/v8gen.py -vv x64.release -- is_component_build=true \
-    make s390x -j4 library=shared werror=no \
-    time ninja -C out.gn/x64.release \
-    time ./tools/run-tests.py --gn \ 
-
-
-
-    /usr/src/v8/out/s390x.release/lib.target/lib/ /lib64/ \ 
-    /usr/src/v8/out/s390x.release/obj.target/tools/gyp/libv8_libplatform.a /usr/lib64/ \
-    /usr/src/v8/include/ /usr/local
-
-# Install v8js
-RUN echo "/usr/lib64" | pecl install v8js-1.0.0 
-
-ENV NO_INTERACTION 1
-RUN echo extension=v8js.so > /etc/php.d/v8js.ini
-RUN php -m | grep v8
+ADD install-v8js.sh /
+RUN chmod +x /install-v8js.sh
+RUN sed -i 's/\r//' /install-v8js.sh
+RUN bash -c "/install-v8js.sh"
 
 ###################################
 #   INSTALL COMPOSER
 ###################################
 
 # install composer 
-# RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
 # Working dir
-# RUN mkdir $HTTPD_PREFIX/htdocs/app
-# WORKDIR $HTTPD_PREFIX/htdocs/app
+RUN mkdir $HTTPD_PREFIX/htdocs/app
+WORKDIR $HTTPD_PREFIX/htdocs/app
 
 # Run
 COPY supervisord.conf /etc/supervisor/supervisord.conf

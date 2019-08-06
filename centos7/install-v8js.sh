@@ -1,24 +1,37 @@
 #!/bin/sh
 
-# Install Depot Tools
-cd /usr/src && git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-export PATH=/usr/src/depot_tools:$PATH
-export PATH=/opt/devops/local/depot_tools:$PATH
-# Install v8
-cd /usr/src && fetch v8
-cd /opt/devops/local/v8
-cd /v8
-git checkout refs/tags/7.1.11
+cd /tmp
+
+# Install depot_tools first (needed for source checkout)
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+export PATH=`pwd`/depot_tools:"$PATH"
+
+# Download v8
+fetch v8
+cd v8
+
+# (optional) If you'd like to build a certain version:
+git checkout 4.9.385.28
 gclient sync
-./tools/dev/v8gen.py -vv x64.release -- is_component_build=true
-time ninja -C out.gn/x64.release
-time ./tools/run-tests.py --gn
-mkdir -p /opt/v8/{lib,include}
-cd /usr/src/v8
-cp -v out.gn/x64.release/lib*.so out.gn/x64.release/*_blob.bin \
-   out.gn/x64.release/icudtl.dat /opt/v8/lib/
-cp -vR include/* /opt/v8/include/
-# Install v8js 
-echo "/usr/lib64" | pecl install v8js-1.0.0
-echo extension=v8js.so > /etc/php.d/v8js.ini
-php -m | grep v8
+
+# use libicu of operating system
+export GYP_DEFINES="use_system_icu=1"
+
+# Build (with internal snapshots)
+export GYPFLAGS="-Dv8_use_external_startup_data=0"
+make native library=shared snapshot=on -j8
+
+# Install to /usr
+sudo mkdir -p /usr/lib /usr/include
+sudo cp out/native/lib.target/lib*.so /usr/lib/
+sudo cp -R include/* /usr/include
+echo -e "create /usr/lib/libv8_libplatform.a\naddlib out/native/obj.target/tools/gyp/libv8_libplatform.a\nsave\nend" | sudo ar -M
+
+cd /tmp
+git clone https://github.com/phpv8/v8js.git
+cd v8js
+phpize
+./configure
+make
+make test
+sudo make install
