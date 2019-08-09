@@ -11,10 +11,8 @@ services:
         ipv4_address: 172.16.238.10
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
   common: 
-    image: web
+    image: web 
     volumes:
       - /opt/sources/mss/BSS_Common_Services:/usr/local/apache2/htdocs/app
     networks:
@@ -22,8 +20,6 @@ services:
         ipv4_address: 172.16.238.11
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
     ports:
       - '11:80'
   media: 
@@ -39,8 +35,6 @@ services:
       - '12:80'
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
   post: 
     image: web
     volumes:
@@ -52,8 +46,6 @@ services:
       - '13:80'
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
   shop: 
     image: web
     volumes:
@@ -65,8 +57,6 @@ services:
         ipv4_address: 172.16.238.14
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
   thumbor: 
     image: apsl/thumbor
     ports:
@@ -87,8 +77,6 @@ services:
         ipv4_address: 172.16.238.16
     extra_hosts:
       - "search-service.com:192.168.88.221"
-      - "shop-service.com:172.16.238.14"
-      - "customer-service.com:172.16.238.16"
 
 ################################################################################
 # NETWORK
