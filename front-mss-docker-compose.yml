@@ -9,8 +9,6 @@ services:
     networks:
       gau_net:
         ipv4_address: 172.16.238.10
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
   common: 
     image: web 
     volumes:
@@ -18,8 +16,6 @@ services:
     networks:
       gau_net:
         ipv4_address: 172.16.238.11
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
     ports:
       - '11:80'
   media: 
@@ -33,8 +29,6 @@ services:
         ipv4_address: 172.16.238.12
     ports:
       - '12:80'
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
   post: 
     image: web
     volumes:
@@ -44,8 +38,6 @@ services:
         ipv4_address: 172.16.238.13
     ports:
       - '13:80'
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
   shop: 
     image: web
     volumes:
@@ -55,8 +47,6 @@ services:
     networks:
       gau_net:
         ipv4_address: 172.16.238.14
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
   thumbor: 
     image: apsl/thumbor
     ports:
@@ -75,8 +65,15 @@ services:
     networks:
       gau_net:
         ipv4_address: 172.16.238.16
-    extra_hosts:
-      - "search-service.com:192.168.88.221"
+  search: 
+    image: web
+    volumes:
+      - /opt/sources/mss/BSS_Search_Services:/usr/local/apache2/htdocs/app
+    ports:
+      - '17:80'
+    networks:
+      gau_net:
+        ipv4_address: 172.16.238.17
 
 ################################################################################
 # NETWORK
