@@ -77,24 +77,24 @@ ENV HTTPD_PREFIX /usr/local/apache2
 #   INSTALL APAHCE 2.4
 ###################################
 
-RUN yum groupinstall " Development Tools"  -y
-RUN yum install expat-devel pcre pcre-devel openssl-devel -y
-SHELL ["/bin/bash", "-c"]
-RUN mkdir "/opt/httpd" \
-        && cd "/opt/httpd" \
-        && wget http://mirrors.viethosting.com/apache/httpd/httpd-2.4.39.tar.gz -O httpd-2.4.39.tar.gz \
-        && wget https://github.com/apache/apr/archive/1.7.0.tar.gz -O apr-1.7.0.tar.gz \
-        && wget https://github.com/apache/apr-util/archive/1.6.1.tar.gz -O apr-util-1.6.1.tar.gz \
-        && tar -zxvf httpd-2.4.39.tar.gz \
-        && tar -zxvf apr-1.7.0.tar.gz \
-        && tar -zxvf apr-util-1.6.1.tar.gz \
-        && mv apr-1.7.0 /opt/httpd/httpd-2.4.39/srclib/apr \
-        && mv apr-util-1.6.1 /opt/httpd/httpd-2.4.39/srclib/apr-util \
-        && cd /opt/httpd/httpd-2.4.39 \
-        && ./buildconf && ./configure --enable-ssl --enable-so --with-included-apr --with-ssl=/usr/local/openssl --prefix=/usr/local/apache2 \
-        && make && make install \
-        && echo 'alias httpd="/usr/local/apache2/bin/httpd"' &>> /etc/profile.d/httpd.sh \
-        && echo 'ServerName localhost' &>> /usr/local/apache2/conf/httpd.conf 
+# RUN yum groupinstall " Development Tools"  -y
+# RUN yum install expat-devel pcre pcre-devel openssl-devel -y
+# SHELL ["/bin/bash", "-c"]
+# RUN mkdir "/opt/httpd" \
+#         && cd "/opt/httpd" \
+#         && wget http://mirrors.viethosting.com/apache/httpd/httpd-2.4.39.tar.gz -O httpd-2.4.39.tar.gz \
+#         && wget https://github.com/apache/apr/archive/1.7.0.tar.gz -O apr-1.7.0.tar.gz \
+#         && wget https://github.com/apache/apr-util/archive/1.6.1.tar.gz -O apr-util-1.6.1.tar.gz \
+#         && tar -zxvf httpd-2.4.39.tar.gz \
+#         && tar -zxvf apr-1.7.0.tar.gz \
+#         && tar -zxvf apr-util-1.6.1.tar.gz \
+#         && mv apr-1.7.0 /opt/httpd/httpd-2.4.39/srclib/apr \
+#         && mv apr-util-1.6.1 /opt/httpd/httpd-2.4.39/srclib/apr-util \
+#         && cd /opt/httpd/httpd-2.4.39 \
+#         && ./buildconf && ./configure --enable-ssl --enable-so --with-included-apr --with-ssl=/usr/local/openssl --prefix=/usr/local/apache2 \
+#         && make && make install \
+#         && echo 'alias httpd="/usr/local/apache2/bin/httpd"' &>> /etc/profile.d/httpd.sh \
+#         && echo 'ServerName localhost' &>> /usr/local/apache2/conf/httpd.conf 
 
 # ADD conf/httpd/ /usr/local/apache2/conf
 # Install google mode pagespeed
@@ -130,35 +130,25 @@ RUN wget https://github.com/php/php-src/archive/php-7.2.23.tar.gz \
 RUN chmod o+x /etc/php/bin/phpize \
     && chmod o+x /etc/php/bin/php-config
 
-# Setup php-fpm
-RUN cd /etc/php/etc \
-        && cp php-fpm.conf.default php-fpm.conf
-ADD conf/php-fpm/php.conf /etc/php/etc/php-fpm.d/
-RUN cd /etc/init.d \
-    && cp /php-src-php-7.2.23/sapi/fpm/init.d.php-fpm php-fpm \
-    && chmod +x php-fpm
-RUN echo "alias php='/etc/php/bin/php'" > /etc/profile.d/php.sh
-RUN export PATH=/etc/php/bin:$PATH
-
-# ADD conf/php-fpm/php-7.2.ini /etc/php.d
-# ADD conf/php-fpm/php-7.2.ini /etc/php/conf.d/
-# ADD conf/php-fpm/php-7.2.ini /etc/php/cli/conf.d/
-# RUN rm /etc/php-fpm.d/www.conf
-# ADD conf/php-fpm/php-fpm-7.2.conf /etc/php-fpm.d/
-# RUN php -v
-# RUN mkdir /run/php-fpm
-# RUN chmod -R 755  /run/php-fpm root root
+ADD conf/php-fpm/php-7.2.ini /etc/php.d
+ADD conf/php-fpm/php-7.2.ini /etc/php/conf.d/
+ADD conf/php-fpm/php-7.2.ini /etc/php/cli/conf.d/
+RUN rm /etc/php-fpm.d/www.conf
+ADD conf/php-fpm/php-fpm-7.2.conf /etc/php-fpm.d/
+RUN php -v
+RUN mkdir /run/php-fpm
+RUN chmod -R 755  /run/php-fpm root root
 
 ###################################
 #   INSTALL COMPOSER
 ###################################
-ADD composer.phar composer.phar 
-RUN mv composer.phar /usr/local/bin/composer
-RUN composer --version 
+# ADD composer.phar composer.phar 
+# RUN mv composer.phar /usr/local/bin/composer
+# RUN composer --version 
 ###################################
 #   INSTALL crontab
 ###################################
-RUN yum install -y cronie
+# RUN yum install -y cronie
 
 # Working dir
 RUN mkdir $HTTPD_PREFIX/htdocs/app

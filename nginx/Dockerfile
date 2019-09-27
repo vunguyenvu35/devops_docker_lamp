@@ -8,6 +8,7 @@ RUN rm -rf /var/cache/apk/* && rm -rf /tmp/*
 ADD nginx.conf /etc/nginx/
 ADD app.conf /etc/nginx/conf.d/
 ADD thai.conf /etc/nginx/conf.d/
+ADD tmadmin.conf /etc/nginx/conf.d/
 
 ADD upstream.conf /etc/nginx/conf.d/
 ADD ssl /etc/nginx/ssl/
