@@ -15,54 +15,19 @@ RUN yum -y update
 #   INSTALL BUILD TOOLS
 ###################################
 
-RUN yum install -y  sudo \ 
-        bzip2-libs  \
-        bzip2 \
-        bzip2-devel  \
-        ca-certificates \
-        glibc gmp gnutls \
-        gmp-devel \
-        libstdc++ openldap \
-        openssl-libs \
-        p11-kit \
-        readline \
-        readline-devel \
-        wget \
-        expat-devel \
-        gettext-devel \
-        pcre \
-        pcre-devel \
-        openssl \
-        openssl-devel \
-        epel-release \
-        git \
-        bash \
-        python-setuptools \
-        gcc \
-        gcc-c++ \
-        perl-ExtUtils-MakeMaker \
-        zlib-devel \
-        curl-devel \
-        make \
-        unzip \
-        libxslt-devel \
-        net-snmp-devel \
-        aspell-devel \
-        unixODBC-devel \
-        libicu-devel \
-        libc-client-devel \
-        freetype-devel \
-        libXpm-devel \
-        libpng-devel \
-        libvpx-devel \
-        enchant-devel \
-        libcurl-devel \
-        libjpeg-turbo-devel \
-        libjpeg-devel \
+RUN yum install -y  sudo bzip2-libs bzip2 bzip2-devel ca-certificates \
+        glibc gmp gnutls gmp-devel libstdc++ openldap openssl-libs \
+        p11-kit readline readline-devel wget expat-devel gettext-devel \
+        pcre pcre-devel openssl openssl-devel epel-release git bash \
+        python-setuptools gcc gcc-c++ \
+        perl-ExtUtils-MakeMaker zlib-devel curl-devel make unzip \
+        libxslt-devel net-snmp-devel aspell-devel unixODBC-devel \
+        libicu-devel libc-client-devel freetype-devel \
+        libXpm-devel libpng-devel libvpx-devel enchant-devel \
+        libcurl-devel libjpeg-turbo-devel libjpeg-devel \
         libxml2-devel pkgconfig libmcrypt-devel mariadb-devel recode-devel autoconf bison re2c \
         automake libtool nasm zlib-devel \
         clean all
-
 
 RUN rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
 RUN easy_install supervisor
@@ -109,9 +74,11 @@ RUN mkdir "/opt/httpd" \
 #   INSTALL php-fpm 7.2
 ###################################
 
-RUN wget https://github.com/php/php-src/archive/php-7.2.23.tar.gz \
+RUN mkdir "/opt/php" \
+        && cd "/opt/php" \
+        && wget https://github.com/php/php-src/archive/php-7.2.23.tar.gz \
         && tar --extract --gzip --file php-7.2.23.tar.gz \
-        && cd php-src-php-7.2.23 \
+        && cd "/opt/php/php-src-php-7.2.23" \
         && ./buildconf --force \
         && CONFIGURE_STRING="--prefix=/etc/php --with-bz2 --with-zlib --enable-zip --disable-cgi \
         --enable-soap --enable-intl --with-openssl --with-readline --with-curl \
@@ -120,32 +87,40 @@ RUN wget https://github.com/php/php-src/archive/php-7.2.23.tar.gz \
         --with-gd --enable-exif --with-jpeg-dir --with-png-dir --with-freetype-dir --with-xsl \
         --enable-bcmath --enable-mbstring --enable-calendar --enable-simplexml --enable-json \
         --enable-hash --enable-session --enable-xml --enable-wddx --enable-opcache \
-        --with-pcre-regex --with-config-file-path=/etc/php/cli \
-        --with-config-file-scan-dir=/etc/php/etc --enable-cli --enable-maintainer-zts \
+        --with-pcre-regex --with-config-file-path=/etc/php/etc \
+        --with-config-file-scan-dir=/etc/php/etc --enable-cli --enable-pthreads=shared --enable-maintainer-zts \
         --with-tsrm-pthreads --enable-debug --enable-fpm \
         --with-fpm-user=www-data --with-fpm-group=www-data" \
         && ./configure $CONFIGURE_STRING \
-        && make && sudo make install
-
-RUN chmod o+x /etc/php/bin/phpize \
-    && chmod o+x /etc/php/bin/php-config
+        && make && sudo make install \
+        && chmod o+x /etc/php/bin/phpize \
+        && chmod o+x /etc/php/bin/php-config
 
 # Setup php-fpm
-RUN cd /etc/php/etc \
+RUN mkdir /etc/php/etc/php.d \
+        &&cd /etc/php/etc \
         && cp php-fpm.conf.default php-fpm.conf
-ADD conf/php-fpm/php.conf /etc/php/etc/php-fpm.d/
+ADD conf/php-fpm/php-fpm.conf /opt/php
+RUN cp /opt/php/php-fpm.conf /etc/php/etc/php-fpm.d/php-fpm.conf \
+        && cp /opt/php/php-src-php-7.2.23/php.ini-production /etc/php/etc/php.ini
 RUN cd /etc/init.d \
-    && cp /php-src-php-7.2.23/sapi/fpm/init.d.php-fpm php-fpm \
-    && chmod +x php-fpm
+    && cp /opt/php/php-src-php-7.2.23/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
+    && chmod +x /etc/init.d/php-fpm
 RUN echo "alias php='/etc/php/bin/php'" > /etc/profile.d/php.sh
-RUN export PATH=/etc/php/bin:$PATH
+ENV PATH "$PATH:/etc/php/bin"
+RUN php -v
+
+# Install ptheads
+RUN mkdir "/opt/php/pthreads" \
+        && cd "/opt/php/pthreads" \
+        && git clone https://github.com/krakjoe/pthreads.git . \
+        && phpize && ./configure --with-php-config=/etc/php/bin/php-config && make install
+# RUN echo "extension=pthreads" >> /etc/php/etc/php.ini
 
 # ADD conf/php-fpm/php-7.2.ini /etc/php.d
 # ADD conf/php-fpm/php-7.2.ini /etc/php/conf.d/
 # ADD conf/php-fpm/php-7.2.ini /etc/php/cli/conf.d/
 # RUN rm /etc/php-fpm.d/www.conf
-# ADD conf/php-fpm/php-fpm-7.2.conf /etc/php-fpm.d/
-# RUN php -v
 # RUN mkdir /run/php-fpm
 # RUN chmod -R 755  /run/php-fpm root root
 
@@ -154,7 +129,7 @@ RUN export PATH=/etc/php/bin:$PATH
 ###################################
 ADD composer.phar composer.phar 
 RUN mv composer.phar /usr/local/bin/composer
-RUN composer --version 
+RUN composer --version
 ###################################
 #   INSTALL crontab
 ###################################
@@ -165,6 +140,11 @@ RUN mkdir $HTTPD_PREFIX/htdocs/app
 WORKDIR $HTTPD_PREFIX/htdocs/app
 
 # Run
-COPY supervisord.conf /etc/supervisor/supervisord.conf
-CMD ["/usr/bin/supervisord"]
+# COPY supervisord.conf /etc/supervisor/supervisord.conf
+# CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+# ENTRYPOINT  ["/bin/bash", "-c", "/etc/init.d/php-fpm start && crond && /usr/local/apache2/bin/httpd -D FOREGROUND && tail -f /dev/null"]
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN sed -i -e 's/\r$//' /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/docker-entrypoint.sh start"]
+CMD ["--no-daemonize"]
 EXPOSE 80
