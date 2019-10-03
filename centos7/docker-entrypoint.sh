@@ -1,20 +1,20 @@
 #!/bin/bash
 set -e
 
-if [ "$1" = 'start' ]; then
-    # start crond
-    crond
+for var in "$@"
+do
 
-    # start php-fpm
-    /etc/init.d/php-fpm start
+    if [ "$var" = 'crond' ]; then
+        # start crond
+        crond
+    fi
 
-    # start httpd
-    /usr/local/apache2/bin/httpd -D FOREGROUND
+    if [ "$var" = 'php-fpm' ]; then
+        # start php-fpm
+        /etc/init.d/php-fpm start
+    fi
 
-    # run
-    tail -f /dev/null
-fi
+done
 
-exec "$@"
-
-
+# echo system
+tail -f /dev/null
