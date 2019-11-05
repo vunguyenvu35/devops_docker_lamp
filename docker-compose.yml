@@ -1,14 +1,29 @@
 version: "3.3"
 services:
-  front-end: 
+  redis: 
+    build: ./nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    networks:
+      gau_net:
+        ipv4_address: 172.16.238.9
+  tmadmin: 
     image: web
     volumes:
-      - /home/admin-tools:/usr/local/apache2/htdocs/app
+      - /opt/sources/tmadmin:/usr/local/apache2/htdocs/app
     ports:
       - '10:80'
     networks:
       gau_net:
         ipv4_address: 172.16.238.10
+  redisearch: 
+    image: redislabs/redisearch:latest
+    ports:
+      - '6379:6379'
+    networks:
+      gau_net:
+        ipv4_address: 172.16.238.11
 
 
 ################################################################################

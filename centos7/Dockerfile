@@ -5,7 +5,7 @@ FROM centos:7
 ###################################
 
 LABEL maintainer="Vu Nguyen Vu <vunguyenvu35@gmail.com>"
-
+USER root
 ENV HTTPD_PREFIX /usr/local/apache2
 ENV HTTPD_ROOT /opt/httpd
 
@@ -109,7 +109,7 @@ RUN  cd "/opt/php" \
         && make && sudo make install \
         && chmod o+x /etc/php/bin/phpize \
         && chmod o+x /etc/php/bin/php-config
-ENV PATH "$PATH:/etc/php/bin"
+ENV PATH "$PATH:/etc/php/bin:/etc/php/sbin"
 RUN echo "alias php='/etc/php/bin/php'" > /etc/profile.d/php.sh
 RUN php -v
 
@@ -118,25 +118,55 @@ RUN mkdir /etc/php/etc/php.d && cd /etc/php/etc \
         && cp php-fpm.conf.default php-fpm.conf
 ADD conf/php-fpm/php-fpm.conf /opt/php
 RUN cp /opt/php/php-fpm.conf /etc/php/etc/php-fpm.d/php-fpm.conf
+
 COPY conf/php.d/php.ini /etc/php/etc/php.ini
 RUN cd /etc/init.d \
     && cp /opt/php/php-src-php-7.2.23/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
     && chmod +x /etc/init.d/php-fpm
+# predis
+RUN yum -y install re2c
+RUN  cd /tmp \
+        && git clone -b 'v0.13.3' https://github.com/redis/hiredis.git \
+        && cd hiredis \
+	&& make && make install
+RUN cd /tmp \
+        && git clone https://github.com/nrk/phpiredis.git \
+        && cd phpiredis \
+        && phpize && ./configure --enable-phpiredis \
+        && make && make install
+RUN touch /etc/php/etc/php.d/predis.ini \
+        && echo 'extension=phpiredis' >> /etc/php/etc/php.d/predis.ini
+
+# solr
+RUN cd /tmp && \
+        git clone https://git.php.net/repository/pecl/search_engine/solr.git && \
+        cd solr && \
+        phpize && \
+        ./configure && \
+        make && make install && \
+        touch /etc/php/etc/php.d/solr.ini && \
+        echo "extension=solr" >> /etc/php/etc/php.d/solr.ini
 
 #  Install pthreads
 RUN mkdir "/opt/php/pthreads" \
         && cd "/opt/php/pthreads" \
         && git clone https://github.com/krakjoe/pthreads.git . \
-        && phpize && ./configure --with-php-config=/etc/php/bin/php-config && make && make install
-# COPY conf/php.d/pthreads.ini /etc/php/etc/php.d/pthreads.ini
+        && phpize && ./configure --with-php-config=/etc/php/bin/php-config && make && make install && \
+        touch /etc/php/etc/php.d/pthreads.ini
+
+###################################
+#   SET UP CRONTAB 
+###################################
+RUN echo "* * * * * cd /usr/local/apache2/htdocs/app && php artisan schedule:run >> /dev/null 2>&1" >>  /etc/crontab
 
 ###################################
 #   INSTALL COMPOSER
 ###################################
 ADD composer.phar composer.phar 
-RUN mv composer.phar /usr/local/bin/composer
-RUN composer --version
-
+RUN chmod 755 composer.phar \
+        && mv composer.phar /usr/local/bin/composer \
+        && composer --version
+        
 # Working dir
 RUN mkdir $HTTPD_PREFIX/htdocs/app
 WORKDIR $HTTPD_PREFIX/htdocs/app

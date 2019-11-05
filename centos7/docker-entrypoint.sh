@@ -3,15 +3,14 @@ set -e
 
 for var in "$@"
 do
-
     if [ "$var" = 'crond' ]; then
         # start crond
-        crond
+        crontab /etc/crontab
     fi
 
-    if [ "$var" = 'php-fpm' ]; then
-        # start php-fpm
-        /etc/init.d/php-fpm start
+    if [ "$var" = 'php' ]; then
+        # start add pthreads
+        # echo 'extension=pthreads' >> /etc/php/etc/php.d/pthreads.ini
     fi
 
 done
