@@ -78,10 +78,10 @@ ENV PATH "$PATH:/usr/local/apache2/bin"
 ###################################
 
 RUN mkdir "/opt/php"
-COPY sources/php/php-src-php-7.2.23.tar.gz /opt/php/php-src-php-7.2.23.tar.gz
+COPY sources/php/php-src-php-7.2.25.tar.gz /opt/php/php-src-php-7.2.25.tar.gz
 RUN  cd "/opt/php" \
-        && tar --extract --gzip --file php-src-php-7.2.23.tar.gz \
-        && cd "/opt/php/php-src-php-7.2.23" \
+        && tar --extract --gzip --file php-src-php-7.2.25.tar.gz \
+        && cd "/opt/php/php-src-php-7.2.25" \
         && ./buildconf --force \
         && CONFIGURE_STRING="--prefix=/etc/php \
         --with-apxs2=/usr/local/apache2/bin/apxs \
@@ -121,7 +121,7 @@ RUN cp /opt/php/php-fpm.conf /etc/php/etc/php-fpm.d/php-fpm.conf
 
 COPY conf/php.d/php.ini /etc/php/etc/php.ini
 RUN cd /etc/init.d \
-    && cp /opt/php/php-src-php-7.2.23/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
+    && cp /opt/php/php-src-php-7.2.25/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
     && chmod +x /etc/init.d/php-fpm
 # predis
 RUN yum -y install re2c
@@ -139,11 +139,11 @@ RUN touch /etc/php/etc/php.d/predis.ini \
 
 # solr
 RUN cd /tmp && \
-        git clone https://git.php.net/repository/pecl/search_engine/solr.git && \
-        cd solr && \
+        git clone https://github.com/php/pecl-search_engine-solr.git && \
+        cd pecl-search_engine-solr && \
         phpize && \
         ./configure && \
-        make && make install && \
+        make && make test && make install && \
         touch /etc/php/etc/php.d/solr.ini && \
         echo "extension=solr" >> /etc/php/etc/php.d/solr.ini
 

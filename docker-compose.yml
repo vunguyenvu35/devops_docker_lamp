@@ -1,6 +1,6 @@
 version: "3.3"
 services:
-  redis: 
+  nginx: 
     build: ./nginx
     ports:
       - '80:80'
@@ -24,6 +24,15 @@ services:
     networks:
       gau_net:
         ipv4_address: 172.16.238.11
+  sorl-search: 
+    image: web
+    volumes:
+      - /opt/mss/BSS_Batch_Import_Solr:/usr/local/apache2/htdocs/app
+    ports:
+      - '12:80'
+    networks:
+      gau_net:
+        ipv4_address: 172.16.238.12
 
 
 ################################################################################
