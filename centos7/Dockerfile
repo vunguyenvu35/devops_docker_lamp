@@ -12,6 +12,13 @@ ENV HTTPD_ROOT /opt/httpd
 RUN yum -y update 
 
 ###################################
+#   INSTALL BUILD TZ
+###################################
+
+ENV TZ=Asia/Ho_Chi_Minh
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+###################################
 #   INSTALL BUILD TOOLS
 ###################################
 
@@ -26,7 +33,7 @@ RUN yum install -y  sudo bzip2-libs bzip2 bzip2-devel ca-certificates \
         libXpm-devel libpng-devel libvpx-devel enchant-devel \
         libcurl-devel libjpeg-turbo-devel libjpeg-devel \
         libxml2-devel pkgconfig libmcrypt-devel mariadb-devel recode-devel autoconf bison re2c \
-        automake libtool nasm zlib-devel \
+        automake libtool nasm zlib-devel sqlite3 \
         clean all
 
 RUN rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
@@ -77,17 +84,34 @@ ENV PATH "$PATH:/usr/local/apache2/bin"
 #   INSTALL php-fpm 7.2
 ###################################
 
+## CMake
+RUN mkdir -p /tmp/cmake && \
+    pushd /tmp/cmake && \
+    wget 'https://cmake.org/files/v3.9/cmake-3.9.1-Linux-x86_64.sh' && \
+    bash cmake-3.9.1-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir && \
+    popd && \
+    rm -rf /tmp/cmake
+
+## Install libzip
+COPY sources/php/libzip-1.5.2.tar.gz /tmp/libzip-1.5.2.tar.gz
+RUN cd /tmp && tar --extract --gzip --file libzip-1.5.2.tar.gz && \
+        cd /tmp/libzip-1.5.2 && \
+        mkdir build && cd build && \
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/libzip/1_5_2 && \
+        make && make install
+RUN yum install -y sqlite-devel.x86_64 oniguruma-devel
+## Install PHP / PHP-FPM
 RUN mkdir "/opt/php"
-COPY sources/php/php-src-php-7.2.25.tar.gz /opt/php/php-src-php-7.2.25.tar.gz
+COPY sources/php/php-7.3.12.tar.gz /opt/php/php-7.3.12.tar.gz
 RUN  cd "/opt/php" \
-        && tar --extract --gzip --file php-src-php-7.2.25.tar.gz \
-        && cd "/opt/php/php-src-php-7.2.25" \
+        && tar --extract --gzip --file php-7.3.12.tar.gz \
+        && cd "/opt/php/php-7.3.12" \
         && ./buildconf --force \
         && CONFIGURE_STRING="--prefix=/etc/php \
         --with-apxs2=/usr/local/apache2/bin/apxs \
         --with-bz2 \
         --with-zlib \
-        --enable-zip \
+        --with-libzip=/usr/local/libzip/1_5_2 \
         --disable-cgi \
         --enable-soap \
         --enable-intl \
@@ -96,15 +120,23 @@ RUN  cd "/opt/php" \
         --with-curl \
         --enable-ftp \
         --enable-mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd \
-        --enable-sockets --enable-pcntl --with-pspell --with-enchant --with-gettext \
-        --with-gd --enable-exif --with-jpeg-dir --with-png-dir --with-freetype-dir --with-xsl \
-        --enable-bcmath --enable-mbstring --enable-calendar --enable-simplexml --enable-json \
-        --enable-hash --enable-session --enable-xml --enable-wddx --enable-opcache \
-        --with-pcre-regex --with-config-file-path=/etc/php/etc \
-        --with-config-file-scan-dir=/etc/php/etc/php.d \
-        --enable-cli --enable-pthreads=shared --enable-maintainer-zts \
-        --with-tsrm-pthreads --enable-debug --enable-fpm \
-        --with-fpm-user=www-data --with-fpm-group=www-data" \
+        --enable-sockets \
+        --enable-pcntl --with-pspell --with-enchant --with-gettext --with-gd \
+        --enable-exif --with-jpeg-dir --with-png-dir --with-freetype-dir --with-xsl \
+        --enable-bcmath \
+        --enable-mbstring \
+        --enable-calendar \
+        --enable-simplexml \
+        --enable-json \
+        --enable-hash \
+        --enable-session \
+        --enable-xml \
+        --enable-wddx \
+        --enable-opcache --with-pcre-regex --with-config-file-path=/etc/php/etc --with-config-file-scan-dir=/etc/php/etc/php.d \
+        --enable-cli \
+        --enable-maintainer-zts --with-tsrm-pthreads \
+        --enable-debug \
+        --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data" \
         && ./configure $CONFIGURE_STRING \
         && make && sudo make install \
         && chmod o+x /etc/php/bin/phpize \
@@ -113,17 +145,17 @@ ENV PATH "$PATH:/etc/php/bin:/etc/php/sbin"
 RUN echo "alias php='/etc/php/bin/php'" > /etc/profile.d/php.sh
 RUN php -v
 
-# Setup php-fpm
+## Setup php-fpm
 RUN mkdir /etc/php/etc/php.d && cd /etc/php/etc \
         && cp php-fpm.conf.default php-fpm.conf
 ADD conf/php-fpm/php-fpm.conf /opt/php
 RUN cp /opt/php/php-fpm.conf /etc/php/etc/php-fpm.d/php-fpm.conf
 
-COPY conf/php.d/php.ini /etc/php/etc/php.ini
+COPY conf/php.d/php.ini-production /etc/php/etc/php.ini
 RUN cd /etc/init.d \
-    && cp /opt/php/php-src-php-7.2.25/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
+    && cp /opt/php/php-7.3.12/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm \
     && chmod +x /etc/init.d/php-fpm
-# predis
+## predis
 RUN yum -y install re2c
 RUN  cd /tmp \
         && git clone -b 'v0.13.3' https://github.com/redis/hiredis.git \
@@ -137,17 +169,17 @@ RUN cd /tmp \
 RUN touch /etc/php/etc/php.d/predis.ini \
         && echo 'extension=phpiredis' >> /etc/php/etc/php.d/predis.ini
 
-# solr
-RUN cd /tmp && \
-        git clone https://github.com/php/pecl-search_engine-solr.git && \
-        cd pecl-search_engine-solr && \
+## solr
+COPY sources/php/solr-3dbdb7e.tar.gz /tmp/solr-3dbdb7e.tar.gz
+RUN cd /tmp && tar --extract --gzip --file solr-3dbdb7e.tar.gz && \
+        cd /tmp/solr-3dbdb7e && \
         phpize && \
         ./configure && \
-        make && make test && make install && \
+        make && make install && \
         touch /etc/php/etc/php.d/solr.ini && \
         echo "extension=solr" >> /etc/php/etc/php.d/solr.ini
 
-#  Install pthreads
+##  Install pthreads
 RUN mkdir "/opt/php/pthreads" \
         && cd "/opt/php/pthreads" \
         && git clone https://github.com/krakjoe/pthreads.git . \
@@ -157,7 +189,15 @@ RUN mkdir "/opt/php/pthreads" \
 ###################################
 #   SET UP CRONTAB 
 ###################################
-RUN echo "* * * * * cd /usr/local/apache2/htdocs/app && php artisan schedule:run >> /dev/null 2>&1" >>  /etc/crontab
+# RUN echo "* * * * * /etc/php/bin/php /usr/local/apache2/htdocs/app/artisan schedule:run >> /var/log/crond-stderr.log 2>&1" >>  /etc/crontab
+
+###################################
+#   INSTALL MYSQL CLIENT        
+###################################
+# RUN cd /tmp && \
+#         wget https://repo.mysql.com/mysql80-community-release-el7-1.noarch.rpm && \
+#         yum localinstall -y mysql80-community-release-el7-1.noarch.rpm && yum repolist enabled | grep "mysql.*-community.*" && \
+#         yum-config-manager --enable mysql57-community && yum install -y mysql-community-server
 
 ###################################
 #   INSTALL COMPOSER
