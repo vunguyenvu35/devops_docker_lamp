@@ -179,25 +179,27 @@ RUN cd /tmp && tar --extract --gzip --file solr-3dbdb7e.tar.gz && \
         touch /etc/php/etc/php.d/solr.ini && \
         echo "extension=solr" >> /etc/php/etc/php.d/solr.ini
 
+## php-memcached
+RUN yum -y install libmemcached-devel memcached \
+        clean all
+RUN cd /tmp && git clone https://github.com/php-memcached-dev/php-memcached.git && cd php-memcached && \
+        phpize && \
+        ./configure && \
+        make && make install && \
+        touch /etc/php/etc/php.d/php-memcached.ini && \
+        echo "extension=memcached" >> /etc/php/etc/php.d/php-memcached.ini
+
 ##  Install pthreads
-RUN mkdir "/opt/php/pthreads" \
-        && cd "/opt/php/pthreads" \
-        && git clone https://github.com/krakjoe/pthreads.git . \
-        && phpize && ./configure --with-php-config=/etc/php/bin/php-config && make && make install && \
-        touch /etc/php/etc/php.d/pthreads.ini
+# RUN mkdir "/opt/php/pthreads" \
+#         && cd "/opt/php/pthreads" \
+#         && git clone https://github.com/krakjoe/pthreads.git . \
+#         && phpize && ./configure --with-php-config=/etc/php/bin/php-config && make && make install && \
+#         touch /etc/php/etc/php.d/pthreads.ini
 
 ###################################
 #   SET UP CRONTAB 
 ###################################
 # RUN echo "* * * * * /etc/php/bin/php /usr/local/apache2/htdocs/app/artisan schedule:run >> /var/log/crond-stderr.log 2>&1" >>  /etc/crontab
-
-###################################
-#   INSTALL MYSQL CLIENT        
-###################################
-# RUN cd /tmp && \
-#         wget https://repo.mysql.com/mysql80-community-release-el7-1.noarch.rpm && \
-#         yum localinstall -y mysql80-community-release-el7-1.noarch.rpm && yum repolist enabled | grep "mysql.*-community.*" && \
-#         yum-config-manager --enable mysql57-community && yum install -y mysql-community-server
 
 ###################################
 #   INSTALL COMPOSER
