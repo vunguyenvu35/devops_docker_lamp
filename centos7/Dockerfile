@@ -60,9 +60,9 @@ SHELL ["/bin/bash", "-c"]
 RUN mkdir "/opt/httpd"
 ADD sources/httpd /opt/httpd
 RUN cd "/opt/httpd" \
-        && tar -zxvf httpd-2.4.39.tar.gz \
-        && tar -zxvf apr-1.7.0.tar.gz \
-        && tar -zxvf apr-util-1.6.1.tar.gz \
+        # && tar -zxvf httpd-2.4.39.tar.gz \
+        # && tar -zxvf apr-1.7.0.tar.gz \
+        # && tar -zxvf apr-util-1.6.1.tar.gz \
         && mv apr-1.7.0 /opt/httpd/httpd-2.4.39/srclib/apr \
         && mv apr-util-1.6.1 /opt/httpd/httpd-2.4.39/srclib/apr-util \
         && cd /opt/httpd/httpd-2.4.39 \
